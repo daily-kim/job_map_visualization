@@ -8,20 +8,16 @@ df_job_major_subject = pd.read_csv(
     'data/job_major_subject.csv', encoding='utf-8')
 df_major_info = pd.read_csv(
     'data/major_info.csv', encoding='utf-8')
-df_subject_info = pd.read_csv('subject_description_2015.csv', encoding='utf-8', header=0, names=(
-    ['index', 'subject_name', 'description', 'ability', 'related_subjects', 'type']))
-
-# select rows where job is 통계학연구원
-job_name = '통계학연구원'
-job_desc = df_job_info[df_job_info['job'] == job_name].job_summary.values[0]
+df_subject_info = pd.read_csv('data/subject_info.csv', encoding='utf-8', header=0, names=(
+    ['index', 'subject_name', 'description', 'subject_type', 'subject_grade']))
 
 
-def similarity_function(method='fasttext', *args):
+def similarity_function(method, text1, text2):
     # sourcery skip: merge-comparisons, merge-duplicate-blocks, remove-redundant-if
     if method == 'fasttext':
-        return ko_model.wv.similarity(*args)
+        return ko_model.wv.n_similarity(text1.split(), text2.split())
     elif method == 'SBERT':
-        return ko_model.wv.similarity(*args)
+        return ko_model.wv.n_similarity(text1.split(), text2.split())
     else:
         print('No method')
 
@@ -165,25 +161,35 @@ def get_subject_subject_similarity(job_subject_sim, df_subject_info, threshold, 
     return subject_dict
 
 
-def similarity_all(job_name, sim_method, threshold_subject=0.98):
+def subject_mask(df, subject_grade):
+
+    if subject_grade is None:
+        return df
+    mask = (df.subject_grade == subject_grade)
+    return df[mask]
+
+
+def similarity_grade(job_name, sim_method, threshold_subject=0.98, grade=3):
+    # print(df_job_info)
+    df_subject_info_masked = subject_mask(df_subject_info, grade)
     job_major, major_subject, job_subject = job_major_subject_matching(
         job_name)
     job_major_sim = get_job_major_similarity(
         df_job_info, df_major_info, job_major, sim_method)
     major_subject_sim = get_major_subject_similarity(
-        df_major_info, df_subject_info, major_subject, sim_method)
+        df_major_info, df_subject_info_masked, major_subject, sim_method)
     job_subject_sim_1 = get_job_subject_similarity_1(
-        df_job_info, df_subject_info, job_subject, sim_method)
+        df_job_info, df_subject_info_masked, job_subject, sim_method)
     job_subject_sim_2 = get_job_subject_similarity_2(
         job_major_sim, major_subject_sim)
     subject_subject_sim = get_subject_subject_similarity(
-        job_subject_sim_1, df_subject_info, threshold_subject, sim_method)
+        job_subject_sim_1, df_subject_info_masked, threshold_subject, sim_method)
 
     return job_major_sim, major_subject_sim, job_subject_sim_1, job_subject_sim_2, subject_subject_sim
 
 
 if __name__ == '__main__':
-    job_major_sim, major_subject_sim, job_subject_sim_1, job_subject_sim_2, subject_subject_sim = similarity_all(
-        '통계학연구원')
+    job_major_sim, major_subject_sim, job_subject_sim_1, job_subject_sim_2, subject_subject_sim = similarity_grade(
+        '통계학연구원', grade=1)
 
     print(job_subject_sim_2)
