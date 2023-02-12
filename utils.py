@@ -2,6 +2,7 @@ import pandas as pd
 from gensim import models
 
 ko_model = models.fasttext.load_facebook_model('data/cc.ko.300.bin.gz')
+
 df_job_info = pd.read_csv(
     'data/job_data.csv', encoding='utf-8')
 df_job_major_subject = pd.read_csv(
@@ -10,6 +11,8 @@ df_major_info = pd.read_csv(
     'data/major_info.csv', encoding='utf-8')
 df_subject_info = pd.read_csv('data/subject_info.csv', encoding='utf-8', header=0, names=(
     ['index', 'subject_name', 'description', 'subject_type', 'subject_grade']))
+# predefined common_subjects(1st grade)
+COMMON_SUBJECTS = ", 국어, 통합과학, 과학탐구실험, 한국사, 수학, 영어, 통합사회"
 
 
 def similarity_function(method, text1, text2):
@@ -23,7 +26,6 @@ def similarity_function(method, text1, text2):
 
 
 def job_major_subject_matching(job_name):
-
     # job-major matching
     majorlist = list(
         df_job_major_subject[df_job_major_subject['job'] == job_name].major.unique())
@@ -33,6 +35,9 @@ def job_major_subject_matching(job_name):
     subjects = df_job_major_subject[df_job_major_subject['job'] == job_name]
     subject_details = subjects.groupby(
         'major', group_keys=False).subject_details.apply(lambda x: ','.join(x))
+    # add predefined common subjects(1st grade)
+    for idx, line in enumerate(subject_details):
+        subject_details[idx] = line + COMMON_SUBJECTS
 
     major_subject = dict()
     job_subject = dict()
@@ -52,8 +57,7 @@ def job_major_subject_matching(job_name):
                 i = tmp.index(e)
                 tmp[i] = tmp[i-1][:-1]+e
 
-        # Add key and value to dictionarry
-        major_subject[subject_details.keys()[idx]] = tmp
+        major_subject[subject_details.keys()[idx]] = set(tmp)
 
         subject_set = set()
         for value in major_subject.values():
@@ -169,7 +173,7 @@ def subject_mask(df, subject_grade):
     return df[mask]
 
 
-def similarity_grade(job_name, sim_method, threshold_subject=0.98, grade=3):
+def similarity_grade(job_name, sim_method='fasttext', threshold_subject=0.98, grade=3):
     # print(df_job_info)
     df_subject_info_masked = subject_mask(df_subject_info, grade)
     job_major, major_subject, job_subject = job_major_subject_matching(
