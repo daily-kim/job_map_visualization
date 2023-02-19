@@ -29,7 +29,7 @@
 - jobname, grade, s2s_threshold, similarity_method 지정하여 생성
 
   - jobname : 직업명
-  - grade : 학년(고등), 미입력시 1,2,3 통합 진로맵 생성
+  - grade : 학년(고등), 0 입력시 1,2,3 통합 진로맵 생성
   - s2s_threshold : subject_subject간 edge 생성 threshold
   - similariry_method : fasttext 만 구현됨
 

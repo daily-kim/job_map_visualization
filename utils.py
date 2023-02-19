@@ -167,7 +167,7 @@ def get_subject_subject_similarity(job_subject_sim, df_subject_info, threshold, 
 
 def subject_mask(df, subject_grade):
 
-    if subject_grade is None:
+    if subject_grade == 0:  # all grade
         return df
     mask = (df.subject_grade == subject_grade)
     return df[mask]
