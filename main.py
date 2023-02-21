@@ -76,11 +76,11 @@ def graph_construction_with_major(jobname, grade=None, similarity_method="tastte
     return g
 
 
-def graph_construction_without_major(jobname, grade=None, similarity_method="tasttext", s2s_threshold=0.9):
+def graph_construction_without_major(jobname, grade=0, similarity_method="tasttext", s2s_threshold=0.9):
     _, _, _, job_subject_sim_2, subject_subject_sim = similarity_grade(
         jobname, similarity_method, s2s_threshold, grade)
 
-    if grade is None:
+    if grade == 0:
         subject_grade = subject_labeling(
             jobname, similarity_method, s2s_threshold)
     else:
@@ -186,7 +186,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--jobname', type=str, default='통계학연구원')
-    parser.add_argument('--grade', type=int, default='None')
+    parser.add_argument('--grade', type=int, default='0')
     parser.add_argument('--s2s_threshold', type=float, default=0.9)
     parser.add_argument('--similarity_method', type=str, default='fasttext')
     parser.add_argument('--saveimgdir', type=str, default='result/img/')
