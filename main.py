@@ -33,51 +33,8 @@ def subject_labeling(jobname, similarity_method, s2s_threshold):
     return subject_grade
 
 
-def graph_construction_with_major(jobname, grade=None, similarity_method="tasttext", s2s_threshold=0.9, node_scale=(0, 1), edge_scale=(0, 1)):
-    job_major_sim, major_subject_sim, job_subject_sim_1, job_subject_sim_2, subject_subject_sim = similarity_grade(
-        jobname, "fasttext", threshold_subject=s2s_threshold, grade=grade)
-
-    majors = list(job_major_sim.keys())
-    subjects = list(job_subject_sim_1.keys())
-    subject_subject = list(subject_subject_sim.keys())
-    majors_weight = list(job_major_sim.values())
-    major_subject = []
-
-    subject_subject = [
-        (
-            list(subject_subject_sim.keys())[idx][0],
-            list(subject_subject_sim.keys())[idx][1],
-            list(subject_subject_sim.values())[idx],
-        )
-        for idx in range(len(subject_subject_sim))
-    ]
-    job_major = [
-        (jobname, majors[idx], job_major_sim[majors[idx]])
-        for idx in range(len(job_major_sim))
-    ]
-    for idx in range(len(major_subject_sim)):
-        major_subject.extend(
-            (majors[idx], subject, major_subject_sim[majors[idx]][subject])
-            for subject in major_subject_sim[majors[idx]]
-        )
-    g = nx.Graph()
-    g.add_node(jobname, kind='job', weight=2, color='silver')
-    g.add_nodes_from([(node, {'weight': attr, 'kind': 'major', 'color': 'cyan'}) for (
-        node, attr) in job_major_sim.items()])
-    g.add_nodes_from([(node, {'weight': attr, 'kind': 'subject', 'color': 'paleturquoise'}) for (
-        node, attr) in job_subject_sim_2.items()])
-
-    g.add_weighted_edges_from(
-        subject_subject, kind='subject-subject', color='silver')
-    g.add_weighted_edges_from(
-        major_subject, kind='major-subject', color='silver')
-    g.add_weighted_edges_from(job_major, kind='job-major', color='silver')
-
-    return g
-
-
-def graph_construction_without_major(jobname, grade=0, similarity_method="tasttext", s2s_threshold=0.9):
-    _, _, _, job_subject_sim_2, subject_subject_sim = similarity_grade(
+def graph_construction(jobname, grade=0, similarity_method="tasttext", s2s_threshold=0.9):
+    _, _, _, job_subject_sim, subject_subject_sim = similarity_grade(
         jobname, similarity_method, s2s_threshold, grade)
 
     if grade == 0:
@@ -85,10 +42,8 @@ def graph_construction_without_major(jobname, grade=0, similarity_method="tastte
             jobname, similarity_method, s2s_threshold)
     else:
         subject_grade = {
-            subject: grade for subject in job_subject_sim_2.keys()}
+            subject: grade for subject in job_subject_sim.keys()}
 
-    # majors = list(job_major_sim.keys())
-    # subjects = list(job_subject_sim_2.keys())
     subject_subject = list(subject_subject_sim.keys())
     job_subject = []
 
@@ -101,16 +56,16 @@ def graph_construction_without_major(jobname, grade=0, similarity_method="tastte
         for idx in range(len(subject_subject_sim))
     ]
 
-    for _ in range(len(job_subject_sim_2)):
+    for _ in range(len(job_subject_sim)):
         job_subject.extend(
-            (jobname, subject, job_subject_sim_2[subject])
-            for subject in job_subject_sim_2
+            (jobname, subject, job_subject_sim[subject])
+            for subject in job_subject_sim
         )
 
     g = nx.Graph()
     g.add_node(jobname, kind='job', weight=2, color='silver')
     g.add_nodes_from([(node, {'weight': attr, 'kind': 'subject'})
-                     for (node, attr) in job_subject_sim_2.items()])
+                     for (node, attr) in job_subject_sim.items()])
     # set node color by grade
     color_dict = {1: 'green', 2: 'lightgreen', 3: 'yellowgreen'}
     for node in g.nodes():
@@ -196,7 +151,7 @@ if __name__ == '__main__':
 
     save_weights(args.jobname, args.similarity_method, grade=args.grade)
 
-    graph = graph_construction_without_major(
+    graph = graph_construction(
         jobname=args.jobname,
         grade=args.grade,
         similarity_method=args.similarity_method,
