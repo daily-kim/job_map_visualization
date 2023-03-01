@@ -34,7 +34,7 @@
   - similariry_method : fasttext 만 구현됨
 
 - example  
-  `python main.py --jobname="통계학연구원" --grade=3 --s2s_threshold=0.9 --similarity_method="fasttext"  `
+  `python src/main.py --jobname="통계학연구원" --grade=3 --s2s_threshold=0.9 --similarity_method="fasttext"  `
 
 - 작업 완료 후 result
 - pretrained model이기 때문에 weight를 불러오는 시간이 오래걸리게 됨, 추후 batch 단위로 작업할 수 있도록 수정예정
