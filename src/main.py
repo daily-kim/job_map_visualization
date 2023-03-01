@@ -3,38 +3,30 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from networkx.drawing.nx_pydot import graphviz_layout
 import matplotlib.pyplot as plt
-from utils import similarity_grade
 import argparse
 import json
 
-
-def minmax_scaler(x, scale=(0, 1)):
-    min, max = scale
-    x = np.array(list(x))
-    x_min = x.min()
-    x_max = x.max()
-    x = (x - x_min) / (x_max - x_min)
-    x = x * (max-min) + min
-    return x
+from similarity import similarity_grade
+from utils import minmax_scaler
 
 
 def subject_labeling(jobname, similarity_method, s2s_threshold):
     subject_grade = {}
 
-    _, _, _, job_subject_sim, _ = similarity_grade(
+    _, _, job_subject_sim, _ = similarity_grade(
         jobname, similarity_method, s2s_threshold, grade=1)
     subject_grade = {subject: 1 for subject in job_subject_sim.keys()}
-    _, _, _, job_subject_sim, _ = similarity_grade(
+    _, _, job_subject_sim, _ = similarity_grade(
         jobname, similarity_method, s2s_threshold, grade=2)
     subject_grade.update({subject: 2 for subject in job_subject_sim.keys()})
-    _, _, _, job_subject_sim, _ = similarity_grade(
+    _, _, job_subject_sim, _ = similarity_grade(
         jobname, similarity_method, s2s_threshold, grade=3)
     subject_grade.update({subject: 3 for subject in job_subject_sim.keys()})
     return subject_grade
 
 
 def graph_construction(jobname, grade=0, similarity_method="tasttext", s2s_threshold=0.9):
-    _, _, _, job_subject_sim, subject_subject_sim = similarity_grade(
+    _, _, job_subject_sim, subject_subject_sim = similarity_grade(
         jobname, similarity_method, s2s_threshold, grade)
 
     if grade == 0:
@@ -113,11 +105,10 @@ def visualization(g, node_scale=(0, 1), edge_scale=(0, 1), filename="graph"):
 
 def save_weights(job_name, sim_method='fasttext', grade=3):
 
-    job_major_sim, major_subject_sim, job_subject_sim_1, job_subject_sim_2, subject_subject_sim = similarity_grade(
+    job_major_sim, major_subject_sim, job_subject_sim, subject_subject_sim = similarity_grade(
         job_name, sim_method, 0, grade)
     job_major_sim = {k: float(v) for k, v in job_major_sim.items()}
-    job_subject_sim_1 = {k: float(v) for k, v in job_subject_sim_1.items()}
-    job_subject_sim_2 = {k: float(v) for k, v in job_subject_sim_2.items()}
+    job_subject_sim = {k: float(v) for k, v in job_subject_sim.items()}
     subject_subject_sim = {'-'.join(k): float(v)
                            for k, v in subject_subject_sim.items()}
 
@@ -125,13 +116,9 @@ def save_weights(job_name, sim_method='fasttext', grade=3):
     # save job_major_sim to json
     with open(basedir+'job_major_sim.json', 'w', encoding='utf-8') as f:
         json.dump(job_major_sim, f, ensure_ascii=False, indent=4)
-
     # save job_subject_sim_1 to json
-    with open(basedir+'job_subject_sim_1.json', 'w', encoding='utf-8') as f:
-        json.dump(job_subject_sim_1, f, ensure_ascii=False, indent=4)
-    # save job_subject_sim_2 to json
-    with open(basedir+'job_subject_sim_2.json', 'w', encoding='utf-8') as f:
-        json.dump(job_subject_sim_2, f, ensure_ascii=False, indent=4)
+    with open(basedir+'job_subject_sim.json', 'w', encoding='utf-8') as f:
+        json.dump(job_subject_sim, f, ensure_ascii=False, indent=4)
     # # save subject_subject_sim to json
     with open(basedir+'subject_subject_sim.json', 'w', encoding='utf-8') as f:
         json.dump(subject_subject_sim, f, ensure_ascii=False, indent=4)
