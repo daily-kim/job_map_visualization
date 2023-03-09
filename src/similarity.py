@@ -1,6 +1,6 @@
 import json
 from gensim import models
-from utils import subject_mask_by_grade, load_data
+from utils import subject_mask_by_grade, load_data, normalize_dict
 
 # predefined common_subjects(1st grade)
 COMMON_SUBJECTS = ", 국어, 통합과학, 과학탐구실험, 한국사, 수학, 영어, 통합사회"
@@ -108,6 +108,7 @@ def get_major_subject_similarity(df_major_info, df_subject_info, major_subject, 
 
 
 def get_job_subject_similarity(job_major_sim, major_subject_sim):
+    # sourcery skip: inline-immediately-returned-variable
     job_subject_sim_2 = dict()
     for major, majorsim in job_major_sim.items():
         for subject, subjectsim in major_subject_sim.get(major).items():
@@ -115,6 +116,8 @@ def get_job_subject_similarity(job_major_sim, major_subject_sim):
                 job_subject_sim_2[subject] += majorsim*subjectsim
             except Exception:
                 job_subject_sim_2[subject] = majorsim*subjectsim
+
+    job_subject_sim_2 = normalize_dict(job_subject_sim_2)
     return job_subject_sim_2
 
 
@@ -156,7 +159,10 @@ def similarity_grade(job_name, sim_method='fasttext', threshold_subject=0.98, gr
     return job_major_sim, major_subject_sim, job_subject_sim, subject_subject_sim
 
 
-def save_weights(job_name, sim_method='fasttext', grade=3):
+def save_weights(args):
+    job_name = args.jobname
+    sim_method = args.similarity_method
+    grade = args.grade
 
     job_major_sim, major_subject_sim, job_subject_sim, subject_subject_sim = similarity_grade(
         job_name, sim_method, 0, grade)
@@ -165,7 +171,7 @@ def save_weights(job_name, sim_method='fasttext', grade=3):
     subject_subject_sim = {'-'.join(k): float(v)
                            for k, v in subject_subject_sim.items()}
 
-    basedir = f'result/weight/{job_name}_grade{grade}_'
+    basedir = f'{args.weightdir}{job_name}_grade{grade}_'
     # save job_major_sim to json
     with open(basedir+'job_major_sim.json', 'w', encoding='utf-8') as f:
         json.dump(job_major_sim, f, ensure_ascii=False, indent=4)
